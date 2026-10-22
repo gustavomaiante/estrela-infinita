@@ -265,8 +265,10 @@ function genVisible(i){return i===0||S.gens[i-1]>0||S.gens[i]>0;}
 function hasMagnet(){return !!S.upg.k1||lv('mag')>=1;}
 function isAvail(u){if(u.mag&&lv('mag')>=1)return false;if(u.kind==='t')return S.gens[u.gen]>=u.req;if(u.kind==='y')return S.gens[u.a]>=25&&S.gens[u.b]>=10;return S.runTotal>=u.cost*0.3||S.money>=u.cost;}
 function dustMult(){return 1+0.15*lv('fe');}
-function dustGain(){return Math.floor(Math.sqrt(S.runTotal/1e6)*dustMult());}
-function nextDustAt(){return Math.pow((dustGain()+1)/dustMult(),2)*1e6;}
+function novaMult(){return 1+0.2*S.novas;}
+function novaReq(){return 1e6*novaMult();}
+function dustGain(){return Math.floor(Math.sqrt(S.runTotal/novaReq())*dustMult());}
+function nextDustAt(){return Math.pow((dustGain()+1)/dustMult(),2)*novaReq();}
 function earn(x){S.money+=x;S.runTotal+=x;S.allTotal+=x;secEarn+=x;}
 let secEarn=0;
 
@@ -481,7 +483,7 @@ function buildShop(){const box=$('shop');box.innerHTML='';shopEls=PERMA.map(p=>{
   r.innerHTML='<div class="ic">'+p.i+'</div><div><div class="nm"></div><div class="ds"></div></div><button class="gb pk"></button>';r.querySelector('button').onclick=()=>{buyPerma(p.id);ui(true);};box.appendChild(r);
   return{nm:r.querySelector('.nm'),ds:r.querySelector('.ds'),b:r.querySelector('button')};});}
 function uiNova(){const g=dustGain();$('nDust').textContent='✨ '+fmt(S.dust);$('nLife').textContent=fmt(S.dustLife)+' (+'+fmt(S.dustLife*5)+'%)';$('nGain').textContent='+'+fmt(g);
-  $('nNext').innerHTML=S.runTotal<1e6?'Ganhe <b>'+fmt(1e6)+'</b> de energia nesta estrela para liberar ('+fmt(S.runTotal)+' até agora).':'Próxima poeira ao ganhar <b>'+fmt(nextDustAt())+'</b> nesta estrela.';
+  $('nNext').innerHTML='<b>Supernova nº '+(S.novas+1)+'</b>: exige '+fmt(novaReq())+' de energia nesta estrela (custo x'+novaMult().toFixed(1).replace('.',',')+': sobe +0,2x a cada Supernova).<br>'+(S.runTotal<novaReq()?'Faltam <b>'+fmt(novaReq()-S.runTotal)+'</b> ('+fmt(S.runTotal)+' de '+fmt(novaReq())+').':'Próxima poeira ao ganhar <b>'+fmt(nextDustAt())+'</b> nesta estrela.');
   $('novaBtn').disabled=g<1;$('novaBtn').textContent=g<1?'💥 Supernova bloqueada':'💥 Explodir a estrela (+'+fmt(g)+' ✨)';
   $('nTip').textContent=S.dustLife===0?'Dica: na primeira Supernova, uns 5 a 10 de poeira já fazem bastante diferença.':'Dica: costuma valer a pena explodir quando o ganho for pelo menos metade da poeira total que você já tem.';
   PERMA.forEach((p,k)=>{const e=shopEls[k],l=lv(p.id),mx=l>=p.max;e.nm.innerHTML=p.n+' <span class="cnt">nv '+l+'</span>';e.ds.textContent=mx?'Nível máximo!':p.d(l);
