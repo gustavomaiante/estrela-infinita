@@ -1,0 +1,15 @@
+{
+  "name": "Estrela Infinita",
+  "short_name": "Estrela",
+  "description": "Jogo idle de estrela e sistema solar",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04040c",
+  "theme_color": "#1d1840",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
