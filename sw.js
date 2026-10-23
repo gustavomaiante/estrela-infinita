@@ -1,5 +1,5 @@
 // Guarda o jogo no celular para funcionar sem internet
-const CACHE = 'estrela-infinita-v2';
+const CACHE = 'estrela-infinita-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
