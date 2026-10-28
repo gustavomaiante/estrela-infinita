@@ -188,6 +188,9 @@ label.tg{display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0;cur
         <button class="gb pk" id="novaBtn" style="width:100%;padding:11px;font-size:14.5px"></button>
         <p class="mut small" id="nTip" style="margin:7px 0 0"></p>
       </div>
+      <h3>☠️ Corrupções <span class="mut small" style="font-weight:400">(dificuldade opcional)</span></h3>
+      <p class="mut small" id="corrInfo" style="margin:2px 0 8px"></p>
+      <div id="corrList"></div>
       <h3>✨ Loja de Poeira Estelar (permanente)</h3>
       <div id="shop"></div>
     </div>
@@ -354,23 +357,26 @@ const STARS=[
 function starOf(n){const b=STARS[n%STARS.length];const cyc=Math.floor(n/STARS.length);return Object.assign({},b,{n:b.n+(cyc?' '+['','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(cyc,9)]:'')});}
 const STARTS=[0,150,2e3,2.5e4,3e5,5e6,8e7];
 const PERMA=[
-  {id:'core',i:'💠',n:'Núcleo Amplificado',max:50,cost:l=>Math.ceil(3*Math.pow(1.95,l)),d:l=>'Produção x1,18 por nível (atual: x'+fmt(Math.pow(1.18,l))+')'},
-  {id:'click',i:'👆',n:'Toque Divino',max:12,cost:l=>Math.ceil(2*Math.pow(2.2,l)),d:l=>'Toque na estrela x2,2 por nível (atual: x'+fmt(Math.pow(2.2,l))+')'},
-  {id:'heat',i:'🔥',n:'Coração Termonuclear',max:10,cost:l=>Math.ceil(3*Math.pow(2.1,l)),d:l=>'Erupção Solar mais forte (x'+(3.5+.5*l).toFixed(1).replace('.',',')+' → x'+(4+.5*l).toFixed(1).replace('.',',')+') e +2s'},
+  {id:'core',inf:1,i:'💠',n:'Núcleo Amplificado',max:50,cost:l=>Math.ceil(3*Math.pow(1.95,l)),d:l=>'Produção x1,18 por nível (atual: x'+fmt(Math.pow(1.18,l))+')'},
+  {id:'click',inf:1,i:'👆',n:'Toque Divino',max:12,cost:l=>Math.ceil(2*Math.pow(2.2,l)),d:l=>'Toque na estrela x2,2 por nível (atual: x'+fmt(Math.pow(2.2,l))+')'},
+  {id:'heat',inf:1,i:'🔥',n:'Coração Termonuclear',max:10,cost:l=>Math.ceil(3*Math.pow(2.1,l)),d:l=>'Erupção Solar mais forte (x'+(3.5+.5*l).toFixed(1).replace('.',',')+' → x'+(4+.5*l).toFixed(1).replace('.',',')+') e +2s'},
   {id:'eng',i:'🔧',n:'Engenharia Orbital',max:12,cost:l=>Math.ceil(3*Math.pow(1.85,l)),d:l=>'Estruturas 3,5% mais baratas por nível (atual: -'+Math.round((1-Math.pow(.965,l))*100)+'%)'},
   {id:'start',i:'💰',n:'Herança Estelar',max:6,cost:l=>Math.ceil(4*Math.pow(3.4,l)),d:l=>'Comece cada estrela com '+fmt(STARTS[Math.min(l+1,6)])+' de energia'},
   {id:'auto',i:'🤖',n:'Automação Orbital',max:2,cost:l=>[18,85][l],d:l=>l===0?'Compra até 4 estruturas/s automaticamente':'Também compra melhorias básicas automaticamente'},
   {id:'time',i:'⏳',n:'Dilatação Temporal',max:7,cost:l=>Math.ceil(3*Math.pow(2.3,l)),d:l=>'Jogo fechado: '+Math.round((.2+.08*l)*100)+'% → '+Math.round((.2+.08*(l+1))*100)+'% da produção, até '+(3+2*l)+'h'},
   {id:'mile',i:'🏁',n:'Marcos Ressonantes',max:3,cost:l=>[25,110,450][l],d:l=>'Bônus de marco (10, 25, 50...) sobe de x'+(1.6+.15*l).toFixed(2).replace('.',',')+' para x'+(1.6+.15*(l+1)).toFixed(2).replace('.',',')},
   {id:'mag',i:'🧲',n:'Gravidade Residual',max:1,cost:l=>15,d:l=>'O Feixe Gravitacional já vem instalado em toda estrela nova'},
-  {id:'comet',i:'☄️',n:'Atração Astral',max:5,cost:l=>Math.ceil(4*Math.pow(2.7,l)),d:l=>'Cometas e Fendas surgem com mais frequência e ficam mais lentos'},
-  {id:'guard',i:'🛡️',n:'Sentinela Estelar',max:5,cost:l=>Math.ceil(5*Math.pow(2.4,l)),d:l=>'Dano contra Parasitas do Vazio +50%/nv e saque +30%/nv'},
-  {id:'fe',i:'🔮',n:'Alquimia Estelar',max:20,cost:l=>Math.ceil(6*Math.pow(2.35,l)),d:l=>'+12% poeira por Supernova por nível (atual: +'+(12*l)+'%)'}
+  {id:'comet',inf:1,i:'☄️',n:'Atração Astral',max:5,cost:l=>Math.ceil(4*Math.pow(2.7,l)),d:l=>'Cometas e Fendas surgem com mais frequência e ficam mais lentos'},
+  {id:'guard',inf:1,i:'🛡️',n:'Sentinela Estelar',max:5,cost:l=>Math.ceil(5*Math.pow(2.4,l)),d:l=>'Dano contra Parasitas do Vazio +50%/nv e saque +30%/nv'},
+  {id:'fe',inf:1,i:'🔮',n:'Alquimia Estelar',max:20,cost:l=>Math.ceil(6*Math.pow(2.35,l)),d:l=>'+12% poeira por Supernova por nível (atual: +'+(12*l)+'%)'}
 ];
 const DMSHOP=[
-  {id:'dm_prod',i:'🟣',n:'Tecido Escuro',max:20,cost:l=>Math.ceil(1*Math.pow(1.8,l)),d:l=>'Toda a produção x2,5 por nível (atual: x'+fmt(Math.pow(2.5,l))+')'},
-  {id:'dm_dust',i:'✨',n:'Forja de Quasares',max:15,cost:l=>Math.ceil(2*Math.pow(2.1,l)),d:l=>'Ganho de Poeira Estelar x1,5 por nível (atual: x'+fmt(Math.pow(1.5,l))+')'},
+  {id:'dm_prod',inf:1,i:'🟣',n:'Tecido Escuro',max:20,cost:l=>Math.ceil(1*Math.pow(1.8,l)),d:l=>'Toda a produção x2,5 por nível (atual: x'+fmt(Math.pow(2.5,l))+')'},
+  {id:'dm_dust',inf:1,i:'✨',n:'Forja de Quasares',max:15,cost:l=>Math.ceil(2*Math.pow(2.1,l)),d:l=>'Ganho de Poeira Estelar x1,5 por nível (atual: x'+fmt(Math.pow(1.5,l))+')'},
   {id:'dm_keep',i:'🏛️',n:'Memória Acrônica',max:1,cost:l=>5,d:l=>'Mantém a Automação e o Feixe Gravitacional após colapsos e reduz sobretaxa orbital em 40%'},
+  {id:'dm_pact',inf:1,i:'☠️',n:'Pacto do Vazio',max:10,cost:l=>Math.ceil(3*Math.pow(2,l)),d:l=>'Recompensas das Corrupções +20% por nível (atual: +'+Math.round(20*l)+'%)'},
+  {id:'dm_asc',i:'♾️',n:'Eco Eterno',max:1,cost:l=>12,d:l=>'Níveis de Ascensão passam a valer 75% de um nível normal (em vez de 50%)'},
+  {id:'dm_boss',inf:1,i:'🏆',n:'Troféu de Caçador',max:10,cost:l=>Math.ceil(2*Math.pow(1.9,l)),d:l=>'Chefões dão +50% de poeira e de saque por nível (atual: +'+Math.round(50*l)+'%)'},
   {id:'dm_crit',i:'⚡',n:'Pulso de Hawking',max:10,cost:l=>Math.ceil(2*Math.pow(2,l)),d:l=>'Anel de Sincronia fica 35% mais largo e dá +50% de bônus por nível'}
 ];
 const CHALLENGES=[
@@ -407,10 +413,14 @@ ACH.push({id:'g0b',n:'Horizonte de Eventos',d:'Realize seu primeiro Colapso em B
 function newState(){return{money:0,runTotal:0,allTotal:0,clicks:0,gens:GENS.map(()=>0),upg:{},doc:'',dust:0,dustLife:0,perma:{},novas:0,
   dm:0,dmLife:0,dmUpg:{},bhs:0,chals:{},activeChal:'',kills:0,syncHits:0,
   ach:{},comets:0,erupts:0,heat:0,eruptEnd:0,overheatEnd:0,frenzyEnd:0,riftEnd:0,
-  lastTime:Date.now(),runStart:Date.now(),playTime:0,auto:true,autoUpg:true,buyAmt:1,bestGain:0,mute:false,boostEnd:0,daily:null,claimed:0,meteors:0,events:0,hist:[],bestProd:0,music:true,vib:true,notif:false,seen3:true,seen4:true,xp:0,plv:0,arts:{},artEq:[],artNew:0,skinNew:0,forged:0,skins:{},skinStar:'',skinTrail:'',stars:{},starLog:[],journal:{},rec:{},seenMech:{},novasTot:0,bosses:0,flashWins:0,streak:0,lastLogin:'',streakClaimed:true,bossStar:0,v:2};}
+  lastTime:Date.now(),runStart:Date.now(),playTime:0,auto:true,autoUpg:true,buyAmt:1,bestGain:0,mute:false,boostEnd:0,daily:null,claimed:0,meteors:0,events:0,hist:[],bestProd:0,music:true,vib:true,notif:false,seen3:true,seen4:true,xp:0,plv:0,arts:{},artEq:[],artNew:0,skinNew:0,forged:0,skins:{},skinStar:'',skinTrail:'',stars:{},starLog:[],journal:{},rec:{},seenMech:{},novasTot:0,bosses:0,flashWins:0,streak:0,lastLogin:'',streakClaimed:true,bossStar:0,corr:{},corrNext:{},seen5:true,v:2};}
 let S=newState();
-function lv(id){return S.perma[id]||0;}
-function dlv(id){return (S.dmUpg&&S.dmUpg[id])||0;}
+function ascRate(){return (S.dmUpg&&S.dmUpg.dm_asc)?0.75:0.5;}
+function effLv(l,p){if(!p||!p.inf||l<=p.max)return l;return p.max+(l-p.max)*ascRate();}
+function lv(id){return effLv(S.perma[id]||0,PERMA.find(x=>x.id===id));}
+function dlv(id){return effLv((S.dmUpg&&S.dmUpg[id])||0,DMSHOP.find(x=>x.id===id));}
+function shopCost(p,l){return l<p.max?p.cost(l):Math.ceil(p.cost(l)*1.5);}
+function ascTotal(){let n=0;for(const p of PERMA)if(p.inf)n+=Math.max(0,(S.perma[p.id]||0)-p.max);for(const p of DMSHOP)if(p.inf)n+=Math.max(0,((S.dmUpg||{})[p.id]||0)-p.max);return n;}
 function hasChal(id){return !!(S.chals&&S.chals[id]);}
 
 // ===================== CÁLCULOS =====================
@@ -445,7 +455,7 @@ function parasiteDrain(){
   const n=RT&&RT.parasites?RT.parasites.length:0;
   const bd=(RT&&RT.boss)?0.6:1;
   if(!n)return bd;
-  const per=S.activeChal==='swarm'?0.34:0.22;
+  const per=(S.activeChal==='swarm'?0.34:0.22)+(corrOn('c_void')?0.08:0);
   return bd*Math.max(0.12,1-n*per);
 }
 function dustBonusMult(){
@@ -466,7 +476,7 @@ function globalMult(nf){
   return m;
 }
 function genUnit(i,nf){return GENS[i].p*genMult(i)*globalMult(nf);}
-function totalProd(nf){const gm=globalMult(nf);let s=0;for(let i=0;i<GENS.length;i++)if(S.gens[i])s+=S.gens[i]*GENS[i].p*genMult(i);return s*gm;}
+function totalProd(nf){const gm=globalMult(nf);let s=0;for(let i=0;i<GENS.length;i++)if(S.gens[i])s+=S.gens[i]*GENS[i].p*genMult(i);let v=s*gm;if(corrOn('c_entropy')&&v>1)v=Math.pow(v,0.9);return v;}
 function clickVal(){
   if(S.activeChal==='pacifist')return 0;
   let m=Math.pow(2.2,lv('click')),p=0;
@@ -475,6 +485,7 @@ function clickVal(){
   if(S.doc==='auto')m*=0.5;
   let v=m+p*totalProd(true)*(S.doc==='plasma'?1.6:0.75);
   v*=heatZoneMult()*(1+artVal('tap'));
+  if(corrOn('c_silence'))v*=0.1;
   if(frenzyOn())v*=3;
   return v;
 }
@@ -488,6 +499,7 @@ function costMult(){
   let m=Math.pow(0.965,lv('eng'));
   if(S.doc==='plasma')m*=1.12;
   if(hasChal('inflat'))m*=0.85;
+  if(corrOn('c_greed'))m*=2;
   return m;
 }
 function densityTax(o){
@@ -526,7 +538,7 @@ function isAvail(u){
   return S.runTotal>=u.cost*0.25||S.money>=u.cost;
 }
 function dustMult(){
-  let m=(1+0.12*lv('fe'))*Math.pow(1.5,dlv('dm_dust'));
+  let m=(1+0.12*lv('fe'))*Math.pow(1.5,dlv('dm_dust'))*corrMult('dust');
   if(S.doc==='chaos')m*=1.25;
   if(hasChal('swarm'))m*=1.25;
   m*=(1+artVal('dust'))*(weekId()==='dust'?1.25:1);
@@ -535,7 +547,7 @@ function dustMult(){
 function novaMult(){return Math.pow(2.65,S.novas);}
 function novaReq(){
   if(S.activeChal){const ch=CHALLENGES.find(x=>x.id===S.activeChal);if(ch)return ch.goal;}
-  return 5e6*novaMult();
+  return 5e6*novaMult()*(corrOn('c_weight')?100:1);
 }
 function dustGain(){
   if(S.runTotal<novaReq())return 0;
@@ -549,7 +561,7 @@ function nextDustAt(){
 function dmReq(){return 1e16*Math.pow(18,S.bhs||0);}
 function dmGain(){
   if(S.novas<5||S.allTotal<dmReq())return 0;
-  return Math.max(1,Math.floor(Math.pow(S.allTotal/dmReq(),0.28)*(1+0.1*S.novas)));
+  return Math.max(1,Math.floor(Math.pow(S.allTotal/dmReq(),0.28)*(1+0.1*S.novas)*corrMult('dm')));
 }
 function earn(x){if(x<=0)return;S.money+=x;S.runTotal+=x;S.allTotal+=x;secEarn+=x;prog('earn',x);}
 let secEarn=0;
@@ -570,8 +582,14 @@ function buyGen(i){
 }
 function buyUpg(id){const u=UPGRADES.find(x=>x.id===id);if(!u||S.upg[id]||S.money<u.cost)return false;S.money-=u.cost;S.upg[id]=true;sfx('buy');return true;}
 function buyAllUpg(){let n=0;for(const u of UPGRADES){if(!S.upg[u.id]&&isAvail(u)&&S.money>=u.cost){S.money-=u.cost;S.upg[u.id]=true;n++;}}if(n){sfx('buy');toast('⬆️ '+n+' melhoria'+(n>1?'s compradas':' comprada')+'!');}}
-function buyPerma(id){const p=PERMA.find(x=>x.id===id),l=lv(id);if(l>=p.max)return;const c=p.cost(l);if(S.dust<c)return;S.dust-=c;S.perma[id]=l+1;sfx('buy');toast(p.i+' '+p.n+' → nível '+(l+1));}
-function buyDm(id){const p=DMSHOP.find(x=>x.id===id),l=dlv(id);if(l>=p.max)return;const c=p.cost(l);if(S.dm<c)return;S.dm-=c;S.dmUpg[id]=l+1;sfx('buy');toast(p.i+' '+p.n+' → nível '+(l+1));}
+function buyPerma(id){const p=PERMA.find(x=>x.id===id),l=S.perma[id]||0;if(l>=p.max&&!p.inf)return;const c=shopCost(p,l);if(S.dust<c)return;S.dust-=c;S.perma[id]=l+1;sfx('buy');
+  toast(p.i+' '+p.n+(l+1>p.max?' → ★ Ascensão '+(l+1-p.max):' → nível '+(l+1)));if(l+1===p.max+1)unlockMech('asc');}
+function buyDm(id){const p=DMSHOP.find(x=>x.id===id),l=(S.dmUpg[id]||0);if(l>=p.max&&!p.inf)return;const c=shopCost(p,l);if((S.dm||0)<c)return;S.dm-=c;S.dmUpg[id]=l+1;sfx('buy');
+  toast(p.i+' '+p.n+(l+1>p.max?' → ★ Ascensão '+(l+1-p.max):' → nível '+(l+1)));if(l+1===p.max+1)unlockMech('asc');}
+function shopRender(e,p,raw,have,cur){const asc=raw>=p.max,mx=asc&&!p.inf,el=effLv(raw,p);
+  e.nm.innerHTML=p.n+' <span class="cnt">nv '+Math.min(raw,p.max)+'/'+p.max+'</span>'+(asc&&p.inf?' <span class="tag" style="background:#ffd23f22;border-color:#ffd23f;color:#ffe27a">★ Ascensão '+(raw-p.max)+'</span>':'');
+  e.ds.textContent=mx?'Nível máximo!':p.d(el)+(asc?' · cada Ascensão vale '+Math.round(ascRate()*100)+'% de um nível':'');
+  if(mx){e.b.innerHTML='Máximo';e.b.disabled=true;}else{const c=shopCost(p,raw);e.b.innerHTML=(asc?'★ Ascender':'Comprar')+'<small>'+cur+' '+fmt(c)+'</small>';e.b.disabled=have<c;}}
 
 function syncPhase(){return (T*0.68)%1;}
 function isSyncHit(){
@@ -649,6 +667,7 @@ function doNova(forcedChalId){
   }else{
     S.activeChal=forcedChalId==='quit'?'':forcedChalId;
   }
+  S.corr=Object.assign({},S.corrNext||{});
   S.money=S.activeChal?0:STARTS[lv('start')];S.runTotal=0;S.gens=GENS.map(()=>0);S.upg={};S.doc='';
   S.heat=0;S.eruptEnd=0;S.overheatEnd=0;S.frenzyEnd=0;S.riftEnd=0;S.runStart=now();
   RT.nova=0;RT.parts=[];RT.parasites=[];RT.rift=null;RT.comet=null;RT.boss=null;upgKey='';BG=null;
@@ -675,6 +694,7 @@ function doBH(){
   S.dm+=g;S.dmLife+=g;S.bhs=(S.bhs||0)+1;histMark('b');vib([150,80,300]);gainXP(1000);
   const keepAuto=dlv('dm_keep')>=1?{auto:S.perma.auto||0,mag:S.perma.mag||0}:{};
   S.dust=0;S.dustLife=0;S.perma=keepAuto;S.novas=0;S.activeChal='';
+  S.corr=Object.assign({},S.corrNext||{});
   S.money=0;S.runTotal=0;S.gens=GENS.map(()=>0);S.upg={};S.doc='';
   S.heat=0;S.eruptEnd=0;S.overheatEnd=0;S.frenzyEnd=0;S.riftEnd=0;S.runStart=now();
   RT.nova=0;RT.parts=[];RT.parasites=[];RT.rift=null;RT.boss=null;upgKey='';BG=null;
@@ -840,9 +860,9 @@ function stepFx(dt){
     }
   }
   if(now()>RT.paraNext&&!document.hidden&&S.runTotal>600&&RT.parasites.length<3){
-    const maxHp=Math.round((5+S.novas*2)*(S.doc==='chaos'?1.4:1)*(S.activeChal==='swarm'?1.5:1));
+    const maxHp=Math.round((6+3*Math.sqrt(S.novasTot||0)+4*(S.bhs||0))*(S.doc==='chaos'?1.4:1)*(S.activeChal==='swarm'?1.5:1)*(corrOn('c_void')?2:1));
     RT.parasites.push({a:Math.random()*6.28,dist:36+Math.random()*35,spd:(Math.random()<.5?1:-1)*(.4+Math.random()*.3),hp:maxHp,maxHp,flash:0,x:CX,y:CY});
-    const cd=(S.activeChal==='swarm'?18:S.doc==='chaos'?32:46)*1000*(weekId()==='fury'?.5:1);
+    const cd=(S.activeChal==='swarm'?18:S.doc==='chaos'?32:46)*1000*(weekId()==='fury'?.5:1)*(corrOn('c_void')?.5:1);
     RT.paraNext=now()+cd*(0.7+Math.random()*0.6);
     sfx('bad');toast('👾 Um Parasita do Vazio agarrou-se à estrela! Toque nele para expurgar!');
   }
@@ -851,7 +871,7 @@ function stepFx(dt){
   if(RT.rift){
     RT.rift.t+=dt;
     if(RT.rift.t>11){RT.rift=null;}
-  }else if(now()>RT.riftNext&&!document.hidden&&S.runTotal>2500){
+  }else if(now()>RT.riftNext&&!document.hidden&&S.runTotal>2500&&!corrOn('c_dark')){
     const mult=(1+.2*lv('comet'))*(S.doc==='chaos'?1.75:1)*(hasChal('blitz')?1.35:1);
     RT.rift={x:CW*(.18+Math.random()*.64),y:CH*(.16+Math.random()*.56),t:0};
     RT.riftNext=now()+(70+Math.random()*50)*1000/mult;
@@ -862,7 +882,7 @@ function stepFx(dt){
     if(hasMagnet()&&!c.crimson&&c.age>1.3&&!c.pull){c.pull=true;}
     if(c.pull){const dx=CX-c.x,dy=CY-c.y,d=Math.hypot(dx,dy),sp=Math.max(160,d*3);c.vx=dx/d*sp;c.vy=dy/d*sp;if(d<coreR()+6){catchComet(true);return;}}
     c.x+=c.vx*dt;c.y+=c.vy*dt;if(c.x<-80||c.x>CW+80||c.y<-80||c.y>CH+80){RT.comet=null;scheduleComet();}}
-  else if(now()>RT.cometNext&&!document.hidden){
+  else if(now()>RT.cometNext&&!document.hidden&&!corrOn('c_dark')){
     const fromLeft=Math.random()<.5,crimson=Math.random()<.28;
     const sp=(crimson?115:72+Math.random()*45)/(1+.12*lv('comet'));
     RT.comet={x:fromLeft?-40:CW+40,y:24+Math.random()*(CH*.6),vx:(fromLeft?1:-1)*sp,vy:(Math.random()*.4+.1)*sp,crimson};
@@ -1035,12 +1055,11 @@ function uiUpgs(){
 function buildShop(){const box=$('shop');box.innerHTML='';shopEls=PERMA.map(p=>{const r=document.createElement('div');r.className='card';r.style.setProperty('--c','#c94aa8');
   r.innerHTML='<div class="ic">'+p.i+'</div><div><div class="nm"></div><div class="ds"></div></div><button class="gb pk"></button>';r.querySelector('button').onclick=()=>{buyPerma(p.id);ui(true);};box.appendChild(r);
   return{nm:r.querySelector('.nm'),ds:r.querySelector('.ds'),b:r.querySelector('button')};});}
-function uiNova(){const g=dustGain();$('nDust').textContent='✨ '+fmt(S.dust);$('nLife').textContent=fmt(S.dustLife)+' (x'+dustBonusMult().toFixed(2).replace('.',',')+')';$('nGain').textContent='+'+fmt(g);
+function uiNova(){uiCorr();const g=dustGain();$('nDust').textContent='✨ '+fmt(S.dust);$('nLife').textContent=fmt(S.dustLife)+' (x'+dustBonusMult().toFixed(2).replace('.',',')+')';$('nGain').textContent='+'+fmt(g);
   $('nNext').innerHTML='<b>Supernova nº '+(S.novas+1)+'</b>'+(S.activeChal?' (Em Prova Cósmica)':'')+': exige <b>'+fmt(novaReq())+'</b> de energia nesta estrela.<br>'+(S.runTotal<novaReq()?'Faltam <b>'+fmt(novaReq()-S.runTotal)+'</b> ('+fmt(S.runTotal)+' de '+fmt(novaReq())+').':'Próxima poeira ao ganhar <b>'+fmt(nextDustAt())+'</b> nesta estrela.');
   $('novaBtn').disabled=g<1;$('novaBtn').textContent=g<1?'💥 Supernova bloqueada':'💥 Explodir a estrela (+'+fmt(g)+' ✨)';
   $('nTip').textContent=S.dustLife===0?'Dica: escolha uma Doutrina Estelar na aba Melhorias para acelerar sua primeira Supernova!':'Dica: cada Supernova aumenta a meta em x2,65. Invista em Alquimia Estelar e vença Provas Cósmicas!';
-  PERMA.forEach((p,k)=>{const e=shopEls[k],l=lv(p.id),mx=l>=p.max;e.nm.innerHTML=p.n+' <span class="cnt">nv '+l+'/'+p.max+'</span>';e.ds.textContent=mx?'Nível máximo!':p.d(l);
-    if(mx){e.b.innerHTML='Máximo';e.b.disabled=true;}else{const c=p.cost(l);e.b.innerHTML='Comprar<small>✨ '+fmt(c)+'</small>';e.b.disabled=S.dust<c;}});}
+  PERMA.forEach((p,k)=>shopRender(shopEls[k],p,S.perma[p.id]||0,S.dust,'✨'));}
 
 function buildTrials(){
   const dmBox=$('dmShop');dmBox.innerHTML='';
@@ -1063,11 +1082,7 @@ function uiTrials(){
   $('bhDm').textContent='🟣 '+fmt(S.dm||0);$('bhLife').textContent=fmt(S.dmLife||0)+' ('+(S.bhs||0)+' colapsos)';$('bhGain').textContent='+'+fmt(g);
   $('bhBtn').disabled=g<1;
   $('bhBtn').textContent=S.novas<5?'🔒 Exige 5 Supernovas ('+S.novas+'/5)':g<1?'🔒 Exige '+fmt(dmReq())+' energia total':'🕳️ Colapsar em Buraco Negro (+'+fmt(g)+' 🟣)';
-  DMSHOP.forEach((p,k)=>{
-    const e=dmEls[k],l=dlv(p.id),mx=l>=p.max;
-    e.nm.innerHTML=p.n+' <span class="cnt">nv '+l+'/'+p.max+'</span>';e.ds.textContent=mx?'Nível máximo!':p.d(l);
-    if(mx){e.b.innerHTML='Máximo';e.b.disabled=true;}else{const c=p.cost(l);e.b.innerHTML='Comprar<small>🟣 '+fmt(c)+'</small>';e.b.disabled=(S.dm||0)<c;}
-  });
+  DMSHOP.forEach((p,k)=>shopRender(dmEls[k],p,(S.dmUpg||{})[p.id]||0,S.dm||0,'🟣'));
   CHALLENGES.forEach((c,k)=>{
     const e=chalEls[k],done=hasChal(c.id),act=S.activeChal===c.id;
     e.nm.innerHTML=c.n+(done?' <span class="tag" style="background:#1fa65b55;border-color:#4fe293">✓ Concluída</span>':'')+(act?' <span class="tag" style="background:#d6335566;border-color:#ff7b93">⚔️ Ativa</span>':'');
@@ -1129,7 +1144,7 @@ function save(){S.lastTime=now();try{localStorage.setItem(SAVE_KEY,JSON.stringif
 function applySave(o){
   S=Object.assign(newState(),o);
   while(S.gens.length<GENS.length)S.gens.push(0);
-  S.perma=o.perma||{};S.upg=o.upg||{};S.ach=o.ach||{};S.dmUpg=o.dmUpg||{};S.chals=o.chals||{};S.hist=o.hist||[];S.seen3=!!o.seen3;S.seen4=!!o.seen4;S.arts=o.arts||{};S.artEq=o.artEq||[];S.skins=o.skins||{};S.stars=o.stars||{};S.starLog=o.starLog||[];S.journal=o.journal||{};S.rec=o.rec||{};S.seenMech=o.seenMech||{};if(o.novasTot===undefined)S.novasTot=o.novas||0;
+  S.perma=o.perma||{};S.upg=o.upg||{};S.ach=o.ach||{};S.dmUpg=o.dmUpg||{};S.chals=o.chals||{};S.hist=o.hist||[];S.seen3=!!o.seen3;S.seen4=!!o.seen4;S.arts=o.arts||{};S.artEq=o.artEq||[];S.skins=o.skins||{};S.stars=o.stars||{};S.starLog=o.starLog||[];S.journal=o.journal||{};S.rec=o.rec||{};S.seenMech=o.seenMech||{};if(o.novasTot===undefined)S.novasTot=o.novas||0;S.corr=o.corr||{};S.corrNext=o.corrNext||{};S.seen5=!!o.seen5;
   $('sndBtn').textContent=S.mute?'🔇':'🔊';
 }
 function load(){try{const t=localStorage.getItem(SAVE_KEY);if(t){applySave(JSON.parse(t));return true;}}catch(e){}return false;}
@@ -1188,7 +1203,7 @@ function scheduleEvent(first){RT.evNext=now()+(first?100:120+Math.random()*120)*
 function stepEvents(dt){const t=now(),ev=RT.ev;
   if(ev){if(t>ev.end){RT.ev=null;scheduleEvent();}
     else if(ev.type==='meteor'){ev.spawn-=dt;if(ev.spawn<=0){ev.spawn=.32;const gold=Math.random()<.06;RT.mets.push({x:Math.random()*CW*1.1-CW*.05,y:-20,vx:-30+Math.random()*60,vy:110+Math.random()*80,r:gold?9:5+Math.random()*4,gold});}}}
-  else if(t>RT.evNext&&!document.hidden&&S.runTotal>3000)startEvent();
+  else if(t>RT.evNext&&!document.hidden&&S.runTotal>3000&&!corrOn('c_dark'))startEvent();
   for(const m of RT.mets){m.x+=m.vx*dt;m.y+=m.vy*dt;}RT.mets=RT.mets.filter(m=>m.y<CH+30);}
 function startEvent(){S.events=(S.events||0)+1;prog('event',1);sfx('comet');vib(20);gainXP(10);
   if(Math.random()<.25&&S.clicks>20&&!RT.fl&&S.activeChal!=='pacifist'){startFlash();scheduleEvent();return;}
@@ -1293,7 +1308,7 @@ function xpNeed(l){return Math.floor(80*Math.pow(1.16,l)+40*l);}
 const PASS_SKIN={3:'t_rainbow',6:'s_crystal',9:'t_gold',12:'s_gold',16:'t_neon',20:'s_shadow',25:'s_rainbow'};
 function passReward(l){return{dust:2+Math.floor(l/3),art:l%5===0,skin:PASS_SKIN[l]||'',slot:l===10||l===30};}
 function passRewardTxt(l){const r=passReward(l),a=['✨ '+r.dust+' poeira'];if(r.art)a.push('🎁 artefato');if(r.skin)a.push('🎨 '+SKINS.find(x=>x.id===r.skin).n);if(r.slot)a.push('🔓 +1 espaço de artefato');if(l%5===0)a.push('🎖️ título "'+rankOf(l)+'"');return a.join(' · ');}
-function gainXP(n){if(!(n>0))return;S.xp=(S.xp||0)+n*(1+artVal('xp'));let g=0;while(S.xp>=xpNeed(S.plv||0)&&g<50){S.xp-=xpNeed(S.plv||0);S.plv=(S.plv||0)+1;levelUp(S.plv);g++;}}
+function gainXP(n){if(!(n>0))return;S.xp=(S.xp||0)+n*(1+artVal('xp'))*corrMult('xp');let g=0;while(S.xp>=xpNeed(S.plv||0)&&g<50){S.xp-=xpNeed(S.plv||0);S.plv=(S.plv||0)+1;levelUp(S.plv);g++;}}
 function levelUp(l){const r=passReward(l);S.dust+=r.dust;S.dustLife+=r.dust;if(r.skin)unlockSkin(r.skin);if(r.art)rollArtifact(1,'🏅 Nível '+l,Math.min(.6,l/60));
   if(r.slot)toast('🔓 Novo espaço de artefato liberado!');RT.lvlBan={t:0,l};burst(CX,CY-coreR()*1.5,40);sfx('comet');sfx('buy');vib([30,30,80]);
   toast('🏅 Nível '+l+' da Jornada! +2% de produção para sempre · ✨ '+r.dust);if(l===1)unlockMech('pass');}
@@ -1382,8 +1397,8 @@ function flashProg(k){const f=RT.fl;if(!f||f.k!==k)return;f.p=k==='combo'?Math.m
 // ---- Chefões ----
 const BOSSES=[{n:'Devorador do Vazio',c:'#b03cff'},{n:'Leviatã Sombrio',c:'#3c7bff'},{n:'Rainha Abissal',c:'#ff3c8a'},{n:'Olho do Abismo',c:'#ff8a3c'}];
 function bossReady(){return ((S.novasTot||0)>=1||(S.bhs||0)>0)&&!S.activeChal&&S.bossStar!==S.runStart&&S.runTotal>=0.3*novaReq();}
-function spawnBoss(){const B=BOSSES[(S.bosses||0)%BOSSES.length],hp=Math.round(Math.min(400,(55+10*Math.pow(S.novasTot||1,.8))*(S.doc==='chaos'?1.3:1)));
-  RT.boss={n:B.n,c:B.c,hp,maxHp:hp,end:now()+75000,start:now(),t:0,flash:0};S.bossStar=S.runStart;sfx('bad');vib([100,50,100,50,200]);RT.shake=6;
+function spawnBoss(){const B=BOSSES[(S.bosses||0)%BOSSES.length],hp=Math.round(Math.min(1500,(55+10*Math.pow(S.novasTot||1,.8)+80*(S.bhs||0))*(S.doc==='chaos'?1.3:1))*(corrOn('c_tyrant')?3:1));
+  RT.boss={n:B.n,c:B.c,hp,maxHp:hp,end:now()+(corrOn('c_tyrant')?45000:75000),start:now(),t:0,flash:0};S.bossStar=S.runStart;sfx('bad');vib([100,50,100,50,200]);RT.shake=6;
   RT.bossBan={t:0,txt:'👹 '+B.n.toUpperCase()+' APARECEU!',c:'#ff8ab0'};toast('👹 Um Chefão apareceu! Toque nele para derrotá-lo!');unlockMech('boss');}
 function bossR(){return Math.max(22,coreR()*.85);}
 function bossPos(){return{x:CX+Math.sin(T*.6)*Math.min(CW*.25,coreR()*2),y:Math.max(64,CY-coreR()*2.4)+Math.sin(T*1.4)*5};}
@@ -1392,7 +1407,7 @@ function hitBoss(dmg,manual){const b=RT.boss;if(!b)return;dmg*=1+artVal('dmg');b
   if(b.hp<=0)defeatBoss();}
 function defeatBoss(){const b=RT.boss;RT.boss=null;const secs=(now()-b.start)/1000;S.bosses=(S.bosses||0)+1;
   if(!S.rec.bossFast||secs<S.rec.bossFast){if(S.rec.bossFast)toast('🏅 Novo recorde: Chefão derrotado em '+fmtTime(secs)+'!');S.rec.bossFast=secs;}
-  const g=Math.max(1e3,totalProd(true)*900)*(1+artVal('loot'));earn(g);const d=2+Math.floor((S.novasTot||0)/2);S.dust+=d;S.dustLife+=d;gainXP(150);
+  const bm=1+0.5*dlv('dm_boss');const g=Math.max(1e3,totalProd(true)*900)*(1+artVal('loot'))*bm;earn(g);const d=Math.ceil((2+Math.floor((S.novasTot||0)/2))*bm*corrMult('dust'));S.dust+=d;S.dustLife+=d;gainXP(150);
   if(S.bosses===1)unlockSkin('t_crimson');rollArtifact(1,'👹 Chefão',.4);
   const p=bossPos();burst(p.x,p.y,70);RT.rings.push({x:p.x,y:p.y,t:0,col:b.c});RT.shake=10;sfx('nova');vib([60,40,60,40,200]);
   RT.bossBan={t:0,txt:'🏆 CHEFÃO DERROTADO!',c:'#ffe27a'};toast('🏆 '+b.n+' derrotado! +'+fmt(g)+' · ✨ '+d);}
@@ -1489,7 +1504,7 @@ let jSub='m',cSub='a',jEls=[],aEls=[];
 function setSub(g,id){if(g==='day')jSub=id;else cSub=id;document.querySelectorAll('#p-'+g+' .seg button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
   document.querySelectorAll('#p-'+g+' .sub').forEach(s=>s.classList.toggle('on',s.dataset.sub===id));if(g==='ach'&&id==='c')achDirty=true;if(g==='ach'&&id==='a')S.artNew=0;if(g==='ach'&&id==='v')S.skinNew=0;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
-  if(a==='seg')setSub(b.dataset.g,id);else if(a==='eq')toggleEquip(id);else if(a==='skin')equipSkin(id);else if(a==='j')claimJ(id);else if(a==='streak')claimStreak();else if(a==='forge')forge();ui(true);});
+  if(a==='seg')setSub(b.dataset.g,id);else if(a==='eq')toggleEquip(id);else if(a==='skin')equipSkin(id);else if(a==='j')claimJ(id);else if(a==='streak')claimStreak();else if(a==='forge')forge();else if(a==='corr'){if(S.corrNext[id])delete S.corrNext[id];else S.corrNext[id]=true;sfx('buy');}ui(true);});
 $('lvlChip').onclick=()=>{document.querySelector('[data-t=day]').click();setSub('day','p');ui(true);};
 function uiJourney(){const W=WEEKS[weekId()],dl=7-new Date().getDay();
   setH($('weekBox'),'<div class="card" style="--c:#ff8a3c"><div class="ic">'+W[0]+'</div><div><div class="nm">Evento da semana: '+W[1]+'</div><div class="ds">'+W[2]+'. Termina em '+dl+' dia'+(dl>1?'s':'')+'.</div></div><div></div></div>');
@@ -1510,7 +1525,7 @@ function uiJournal(){if(!jEls.length)buildJournal();let done=0,ready=0;J.forEach
   $('jInfo').innerHTML='Objetivos de longo prazo, cada um com recompensa. <b>'+done+'/'+J.length+'</b> concluídos'+(ready?' · <b style="color:#ffd23f">'+ready+' para resgatar!</b>':'')+'.';}
 function uiRecords(){const R=S.rec||{},rows=[['💥 Supernova mais rápida',R.fastNova?fmtTime(R.fastNova):'—'],['📈 Maior produção',fmt(S.bestProd||0)+'/s'],['🎵 Maior combo de Sincronia',fmt(R.maxCombo||0)],['👆 Maior toque',fmt(R.bigTap||0)],
   ['👹 Chefão mais rápido',R.bossFast?fmtTime(R.bossFast):'—'],['📅 Maior sequência de dias',fmt(R.bestStreak||0)],['👹 Chefões derrotados',fmt(S.bosses||0)],['⚡ Desafios Relâmpago vencidos',fmt(S.flashWins||0)],
-  ['💥 Supernovas (total)',fmt(S.novasTot||0)],['🎁 Artefatos forjados',fmt(S.forged||0)],['🏅 Nível da Jornada',(S.plv||0)+' · '+rankOf(S.plv||0)]];
+  ['💥 Supernovas (total)',fmt(S.novasTot||0)],['🎁 Artefatos forjados',fmt(S.forged||0)],['☠️ Maior Corrupção vencida',(S.rec.maxCorr||0)+' pts'],['★ Níveis de Ascensão',fmt(ascTotal())],['🏅 Nível da Jornada',(S.plv||0)+' · '+rankOf(S.plv||0)]];
   setH($('recList'),rows.map(([a,b])=>'<div class="kv"><span class="mut">'+a+'</span><b>'+b+'</b></div>').join(''));}
 function uiColl(){if(cSub==='a')uiArts();else if(cSub==='v')uiSkins();else if(cSub==='s')uiStars();else uiAch();}
 function buildArts(){const box=$('artList');box.innerHTML='';aEls=ARTS.map(a=>{const r=document.createElement('div');r.className='card';r.innerHTML='<div class="ic"></div><div><div class="nm"></div><div class="ds"></div></div><button class="gb" data-act="eq" data-id="'+a.id+'"></button>';box.appendChild(r);
@@ -1535,7 +1550,8 @@ function uiStars(){let h='<p class="mut small" style="margin:2px 0 8px">Cada tip
   setH($('starGal'),h+'</div>');}
 
 // ---- Ritmo por frame e por segundo ----
-function onNova(){S.novasTot=(S.novasTot||0)+1;S.starLog.push((S.novas-1)%STARS.length);if(S.starLog.length>40)S.starLog.shift();
+function onNova(){const cp=corrPts();if(cp>(S.rec.maxCorr||0)){S.rec.maxCorr=cp;if(cp>=3)setTimeout(()=>toast('☠️ Novo recorde: Supernova com '+cp+' pontos de Corrupção!'),2600);}
+  S.novasTot=(S.novasTot||0)+1;S.starLog.push((S.novas-1)%STARS.length);if(S.starLog.length>40)S.starLog.shift();
   const secs=(now()-S.runStart)/1000;if(!S.rec.fastNova||secs<S.rec.fastNova){if(S.rec.fastNova)setTimeout(()=>toast('🏅 Novo recorde: Supernova em '+fmtTime(secs)+'!'),2200);S.rec.fastNova=secs;}
   gainXP(200+50*Math.min(20,S.novasTot));comboBreak();RT.fl=null;}
 function stepSuper(dt){RT.xpT=(RT.xpT||0)+dt;if(RT.xpT>=60){RT.xpT=0;gainXP(5);}
@@ -1546,7 +1562,7 @@ function stepSuper(dt){RT.xpT=(RT.xpT||0)+dt;if(RT.xpT>=60){RT.xpT=0;gainXP(5);}
     else if(!RT.parasites.length&&(S.upg.d1||S.doc==='auto')){RT.bLaser=(RT.bLaser||0)+dt;if(RT.bLaser>=.8){RT.bLaser=0;const p=bossPos();RT.parts.push({x:CX,y:CY,sx:CX,sy:CY,tx:p.x,ty:p.y,t:0,d:.2,col:'#4dfff0',tk:'s'});hitBoss((0.6+(S.doc==='auto'?0.9:0))*(1+0.5*lv('guard')),false);}}}
   for(const c of RT.conf){c.t+=dt;c.x+=c.vx*dt;c.y+=c.vy*dt;c.vy+=260*dt;c.rot+=c.vr*dt;}RT.conf=RT.conf.filter(c=>c.t<2.2);
   if(RT.lvlBan){RT.lvlBan.t+=dt;if(RT.lvlBan.t>2.6)RT.lvlBan=null;}if(RT.bossBan){RT.bossBan.t+=dt;if(RT.bossBan.t>2.6)RT.bossBan=null;}}
-function superTick(){checkLogin();S.stars[S.novas%STARS.length]=true;
+function superTick(){checkLogin();if(!RT.bhNote&&dmGain()>=1){RT.bhNote=1;toast('🕳️ Você já pode colapsar em um Buraco Negro! Veja a aba Provas');}S.stars[S.novas%STARS.length]=true;
   if(!RT.boss&&!document.hidden&&bossReady())spawnBoss();
   const wk=weekNum();if(S.weekSeen!==wk){S.weekSeen=wk;const W=WEEKS[weekId()];setTimeout(()=>toast(W[0]+' Evento da semana: '+W[1]+'! '+W[2]),2500);}}
 function drawSuper(){drawBoss();
@@ -1563,13 +1579,51 @@ const NEWS4='<p>Tudo o que você já tinha continua igual. Chegou o pacote <b>N�
   '<li>⭐ <b>Galeria de estrelas</b> e estrelas antigas brilhando no fundo</li><li>📖 <b>Diário de bordo</b> com 48 objetivos e 🏅 recordes</li>'+
   '<li>📅 <b>Sequência de dias</b>, 🎁 <b>Baú do Tempo</b> ao voltar e evento da semana</li><li>⚡ <b>Desafio Relâmpago</b> e 🌟 <b>meteoros dourados</b></li></ul>';
 
+
+// ===================== FIM DE JOGO: CORRUPÇÕES =====================
+const CORR=[
+  {id:'c_entropy',i:'🌀',n:'Entropia',d:'Toda a produção é elevada a 0,9: quanto maior ela for, mais você perde',pts:3},
+  {id:'c_weight',i:'⚖️',n:'Meta Pesada',d:'A Supernova exige 100x mais energia',pts:2},
+  {id:'c_void',i:'👾',n:'Vazio Faminto',d:'Parasitas surgem 2x mais, têm o dobro de vida e drenam mais',pts:2},
+  {id:'c_tyrant',i:'👹',n:'Tirano',d:'Chefões têm 3x mais vida e só 45 segundos',pts:2},
+  {id:'c_silence',i:'🤐',n:'Silêncio',d:'Toques na estrela valem 90% menos',pts:2},
+  {id:'c_greed',i:'💸',n:'Ganância',d:'Estruturas custam o dobro',pts:1},
+  {id:'c_cold',i:'❄️',n:'Frio Eterno',d:'O calor da estrela esfria 2x mais rápido',pts:1},
+  {id:'c_dark',i:'🌑',n:'Céu Escuro',d:'Sem cometas, Fendas e eventos aleatórios',pts:1}];
+function corrOn(id){return !!(S.corr&&S.corr[id]);}
+function corrPts(set){set=set||S.corr||{};let p=0;for(const c of CORR)if(set[c.id])p+=c.pts;return p;}
+function corrMult(k,set){const p=corrPts(set),pact=1+0.2*dlv('dm_pact');return 1+(k==='dust'?0.3:k==='dm'?0.15:0.1)*p*pact;}
+function corrUnlocked(){return (S.novasTot||0)>=3||(S.bhs||0)>0;}
+function uiCorr(){const ma=x=>'x'+x.toFixed(2).replace('.',',');
+  if(!corrUnlocked()){setH($('corrInfo'),'🔒 Disponível a partir da 3ª Supernova. Corrupções deixam a estrela mais difícil, mas multiplicam a poeira, a Matéria Escura e o XP.');setH($('corrList'),'');return;}
+  const pa=corrPts(),pn=corrPts(S.corrNext);
+  setH($('corrInfo'),'Ligue modificadores para deixar a estrela mais difícil e ganhar mais. <b>As mudanças valem a partir da próxima estrela</b> (próxima Supernova ou Buraco Negro).<br>☠️ <b>Agora: '+pa+' pts</b> · poeira '+ma(corrMult('dust'))+' · Matéria Escura '+ma(corrMult('dm'))+' · XP '+ma(corrMult('xp'))+(pn!==pa?'<br>➡️ <b>Próxima estrela: '+pn+' pts</b> · poeira '+ma(corrMult('dust',S.corrNext)):'')+' · recorde: '+(S.rec.maxCorr||0)+' pts');
+  setH($('corrList'),'<div class="grid2">'+CORR.map(c=>{const nx=!!S.corrNext[c.id],on=corrOn(c.id);return '<div class="tile'+(nx?' on':'')+'" style="text-align:left"><b>'+c.i+' '+c.n+'</b> <span class="cnt">+'+c.pts+' pt'+(c.pts>1?'s':'')+'</span><div class="ds" style="margin:4px 0 6px">'+c.d+(on?'<br><b style="color:#ff9e66">● ativa nesta estrela</b>':'')+'</div><button class="gb '+(nx?'rd':'gh')+'" style="min-width:0;width:100%" data-act="corr" data-id="'+c.id+'">'+(nx?'Desligar na próxima':'Ligar na próxima')+'</button></div>';}).join('')+'</div>');}
+MECH.asc=['Ascensão!','Quando uma melhoria chega ao máximo, ela pode continuar subindo com <b>níveis de Ascensão</b>. Cada um custa mais e vale metade de um nível normal, mas a loja nunca acaba.'];
+SKINS.push({id:'s_corrupt',t:'s',n:'Estrela Corrompida',c:['#ffe0e0','#c0102a','#1a0004'],how:'Diário: Supernova com todas as Corrupções'});
+J.push(...[
+  ['j_asc10','★','Compre 10 níveis de Ascensão',()=>ascTotal(),10,{dust:20,xp:1000}],
+  ['j_asc50','★','Compre 50 níveis de Ascensão',()=>ascTotal(),50,{dust:80,xp:3000,art:1}],
+  ['j_cr5','☠️','Faça uma Supernova com 5+ pontos de Corrupção',()=>S.rec.maxCorr||0,5,{dust:15,xp:800,art:1}],
+  ['j_cr10','☠️','Faça uma Supernova com 10+ pontos de Corrupção',()=>S.rec.maxCorr||0,10,{dust:40,xp:2000,art:1}],
+  ['j_cr14','☠️','Faça uma Supernova com todas as Corrupções (14 pts)',()=>S.rec.maxCorr||0,14,{dust:100,xp:5000,skin:'s_corrupt'}],
+  ['j_bh5','🕳️','Colapse em 5 Buracos Negros',()=>S.bhs||0,5,{xp:4000,art:1}]
+].map(([id,i,n,get,goal,rw])=>({id,i,n,get,goal,rw})));
+jEls=[];
+const NEWS5='<p>Seu amigo pediu, e o fim de jogo ficou mais desafiador:</p><ul>'+
+  '<li>★ <b>Ascensão</b>: as melhorias de poeira e de Matéria Escura que chegam ao máximo agora continuam subindo. A loja nunca acaba.</li>'+
+  '<li>☠️ <b>Corrupções</b> (aba Supernova): 8 modificadores opcionais que deixam a estrela mais difícil e multiplicam poeira, Matéria Escura e XP.</li>'+
+  '<li>👾 <b>Parasitas e Chefões mais fortes</b> conforme você avança em Supernovas e Buracos Negros.</li>'+
+  '<li>🟣 <b>3 itens novos de Matéria Escura</b>: Pacto do Vazio, Eco Eterno e Troféu de Caçador.</li>'+
+  '<li>📖 <b>6 objetivos novos</b> no Diário, incluindo a Estrela Corrompida.</li></ul>';
+
 // ===================== LOOP =====================
 let last=performance.now(),lastAuto=0,lastAch=0,lastSave=now();
 function frame(t){let dt=(t-last)/1000;last=t;
   if(dt>5){const g=totalProd(true)*Math.min(dt,(3+2*lv('time'))*3600)*(.2+.08*lv('time'));if(g>0){earn(g);toast('⏱️ Enquanto a aba estava em segundo plano: +'+fmt(g));}dt=0;}
   dt=Math.min(dt,.25);T+=dt;S.playTime+=dt;
   earn(totalProd()*dt);
-  const cool=(S.activeChal==='frost'?14:6.5)*(eruptOn()?0.6:1);
+  const cool=(S.activeChal==='frost'?14:6.5)*(eruptOn()?0.6:1)*(corrOn('c_cold')?2:1);
   if(S.heat>0)S.heat=Math.max(0,S.heat-dt*cool);
   if(t-lastAuto>500){lastAuto=t;autoRun();}
   if(t-lastAch>1000){lastAch=t;checkAch();ensureDaily();superTick();const bp=totalProd(true);if(bp>(S.bestProd||0))S.bestProd=bp;}
@@ -1584,9 +1638,10 @@ const had=load();
 buildGens();buildDocs();buildShop();buildTrials();resize();
 if(!had)modal('<h2>⭐ Estrela Infinita 2.0</h2><p>Controle o núcleo de uma estrela em evolução! <b>Toque no ritmo do Anel de Sincronia</b> para disparar pulsos críticos e mantenha o calor entre <b>60% e 92%</b> para Fusão Ideal.</p><p class="mut small">Cuidado com a <b>Sobrecarga Coronal</b> e expurgue os <b>👾 Parasitas do Vazio</b> que tentarem drenar sua estrela! Escolha <b>🧭 Doutrinas</b>, vença <b>⚔️ Provas Cósmicas</b> e colapse em um <b>🕳️ Buraco Negro</b>!</p>',[{t:'Brilhar!'}]);
 
+if(had&&S.seen4&&!S.seen5){qModal('<h2>☠️ Atualização: Fim de Jogo</h2>'+NEWS5,[{t:'Bora!'}]);}
 if(had&&!S.seen4){qModal('<h2>🚀 Estrela Infinita: Nível Superior!</h2>'+NEWS4,[{t:'Bora jogar!'}]);}
 if(had)offlineChest();
-S.seen3=true;S.seen4=true;
+S.seen3=true;S.seen4=true;S.seen5=true;
 S.seen3=true;ensureDaily();scheduleEvent(true);applyMusic();S.stars[S.novas%STARS.length]=true;checkLogin();
 S.lastTime=now();
 requestAnimationFrame(frame);
